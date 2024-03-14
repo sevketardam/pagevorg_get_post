@@ -1,3 +1,8 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.ResponseCompression;
+using System.Threading.RateLimiting;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -7,6 +12,30 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddResponseCaching();
+
+builder.Services.AddResponseCompression(options => options.Providers.Add<GzipCompressionProvider>());
+
+builder.Services.AddControllers(options =>
+{
+    options.CacheProfiles.Add("Default30",
+        new CacheProfile()
+        {
+            Duration = 30
+        });
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("Basic", limiterOptions =>
+    {
+        limiterOptions.Window = TimeSpan.FromSeconds(12);
+        limiterOptions.PermitLimit = 20;
+        limiterOptions.QueueLimit = 10;
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -15,6 +44,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseResponseCaching();
+
+app.UseResponseCompression();
 
 app.UseHttpsRedirection();
 

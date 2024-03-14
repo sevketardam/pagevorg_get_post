@@ -7,11 +7,14 @@ using System.Text.RegularExpressions;
 
 namespace canes_news_api.Controllers
 {
+
     [Route("api/[controller]")]
     [ApiController]
     public class NewsController : ControllerBase
     {
+        
         [HttpGet("get")]
+        [ResponseCache(Duration = 20000, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> Get()
         {
             var options = new ChromeOptions();
@@ -33,11 +36,11 @@ namespace canes_news_api.Controllers
             {
                 foreach (var post in posts)
                 {
-                    var image = GetImageUrlFromHtml(post.GetAttribute("innerHTML"));
-                    var date = post.FindElement(By.ClassName("date")).Text.Replace(" ","").Replace(":","");
-                    var title = post.FindElement(By.ClassName("item-info")).FindElement(By.TagName("a")).Text;
-                    var link = post.FindElement(By.ClassName("item-info")).FindElement(By.TagName("a")).GetAttribute("href");
-                    var description = post.FindElement(By.ClassName("item-text")).Text;
+                    var image = GetImageUrlFromHtml(post.GetAttribute("innerHTML")).Trim();
+                    var date = post.FindElement(By.ClassName("date")).Text.Replace(" ","").Replace(":","").Trim();
+                    var title = post.FindElement(By.ClassName("item-info")).FindElement(By.TagName("a")).Text.Trim();
+                    var link = post.FindElement(By.ClassName("item-info")).FindElement(By.TagName("a")).GetAttribute("href").Trim();
+                    var description = post.FindElement(By.ClassName("item-text")).Text.Trim();
 
                     postList.Add(new PostVm
                     {
