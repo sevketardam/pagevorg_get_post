@@ -14,8 +14,8 @@ namespace canes_news_api.Controllers
     {
         
         [HttpGet("get")]
-        [ResponseCache(Duration = 20000, Location = ResponseCacheLocation.Any)]
-        public async Task<IActionResult> Get()
+        [ResponseCache(Duration = 20000, Location = ResponseCacheLocation.Client)]
+        public async Task<IActionResult> Get([FromQuery] string? lang,int? length)
         {
             var options = new ChromeOptions();
             options.AddUserProfilePreference("profile.default_content_settings.popups", 0);
@@ -25,12 +25,22 @@ namespace canes_news_api.Controllers
             options.AddArgument("--disable-extensions");
             options.AddArgument("--headless");
 
-            var driver = new ChromeDriver(@"C:\chromedriver\chromedriver.exe", options);
+            
 
-            driver.Navigate().GoToUrl("https://pagev.org/haberler");
+            var driver = new ChromeDriver(@"C:\chromedriver\chromedriver.exe", options);
+            
+            if(lang == "en")
+            {
+                driver.Navigate().GoToUrl("https://pagev.org/news");
+            }
+            else
+            {
+                driver.Navigate().GoToUrl("https://pagev.org/haberler");
+            }
+            
 
             var postBox = driver.FindElement(By.ClassName("information-posts"));
-            var posts = postBox.FindElements(By.TagName("li"));
+            var posts = postBox.FindElements(By.TagName("li")).Take(length ?? 6).ToList();
             var postList = new List<PostVm>();
             if (posts.Count > 0)
             {
@@ -53,6 +63,7 @@ namespace canes_news_api.Controllers
                 }
             }
 
+            driver.Quit();
 
             return Ok(new
             {
@@ -62,6 +73,7 @@ namespace canes_news_api.Controllers
         }
 
         [HttpGet("get-post")]
+        [ResponseCache(Duration = 2000, Location = ResponseCacheLocation.Client)]
         public async Task<IActionResult> GetPost([FromQuery] string link)
         {
 
@@ -89,6 +101,7 @@ namespace canes_news_api.Controllers
                 driver.Navigate().GoToUrl(link);
 
                 html = driver.FindElement(By.ClassName("page-text")).GetAttribute("innerHTML");
+                driver.Quit();
             }
             catch
             {
@@ -96,10 +109,11 @@ namespace canes_news_api.Controllers
                 driver.Navigate().GoToUrl(link);
 
                 html = driver.FindElement(By.ClassName("page-text")).GetAttribute("innerHTML");
+                driver.Quit();
             }
 
+          
 
-           
 
             return Ok(new
             {
